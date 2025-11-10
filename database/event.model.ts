@@ -27,6 +27,7 @@ const EventSchema = new Schema<IEvent>(
       type: String,
       required: [true, 'Title is required'],
       trim: true,
+      maxlength: [100, 'Title cannot exceed 100 characters'],
     },
     slug: {
       type: String,
@@ -38,11 +39,13 @@ const EventSchema = new Schema<IEvent>(
       type: String,
       required: [true, 'Description is required'],
       trim: true,
+      maxlength: [1000, 'Description cannot exceed 1000 characters'],
     },
     overview: {
       type: String,
       required: [true, 'Overview is required'],
       trim: true,
+      maxlength: [500, 'Overview cannot exceed 500 characters'],
     },
     image: {
       type: String,
@@ -73,6 +76,10 @@ const EventSchema = new Schema<IEvent>(
       type: String,
       required: [true, 'Mode is required'],
       trim: true,
+      enum: {
+        values: ['online', 'offline', 'hybrid'],
+        message: 'Mode must be either online, offline, or hybrid',
+      },
     },
     audience: {
       type: String,
@@ -147,6 +154,9 @@ EventSchema.pre('save', function (next) {
 
 // Create unique index on slug
 EventSchema.index({ slug: 1 }, { unique: true });
+
+// Create compound index for common queries
+EventSchema.index({ date: 1, mode: 1 });
 
 // Export the Event model (prevents model recompilation in development)
 const Event: Model<IEvent> =

@@ -1,17 +1,7 @@
 import mongoose from 'mongoose';
 
-// Define the MongoDB URI from environment variables
-const MONGODB_URI = process.env.MONGODB_URI;
-
-// Validate that the MongoDB URI is defined
-if (!MONGODB_URI) {
-  throw new Error(
-    'Please define the MONGODB_URI environment variable inside .env.local'
-  );
-}
-
 // Define types for the cached connection
-interface MongooseCache {
+interface MongooseCache {   // type MongooseCache = {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
 }
@@ -21,9 +11,12 @@ declare global {
   var mongoose: MongooseCache | undefined;
 }
 
+// Define the MongoDB URI from environment variables
+const MONGODB_URI = process.env.MONGODB_URI;
+
 // Initialize the cache on the global object
 // This prevents multiple connections during hot reloads in development
-let cached: MongooseCache = global.mongoose || { conn: null, promise: null };
+const cached: MongooseCache = global.mongoose || { conn: null, promise: null };
 
 if (!global.mongoose) {
   global.mongoose = cached;
@@ -31,8 +24,7 @@ if (!global.mongoose) {
 
 /**
  * Establishes a connection to MongoDB using Mongoose
- * Uses connection caching to prevent multiple connections in serverless environments
- * 
+ * Caches the connection to prevent multiple connections during development hot reloads.
  * @returns Promise<typeof mongoose> - The Mongoose instance
  */
 async function connectDB(): Promise<typeof mongoose> {
@@ -43,11 +35,18 @@ async function connectDB(): Promise<typeof mongoose> {
 
   // If no promise exists, create a new connection
   if (!cached.promise) {
-    const opts = {
+    // Validate that the MongoDB URI is defined
+    if (!MONGODB_URI) {
+      throw new Error(
+        'Please define the MONGODB_URI environment variable inside .env.local'
+      );
+    }
+
+    const options = {
       bufferCommands: false, // Disable Mongoose buffering
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI as string, opts).then((mongooseInstance) => {
+    cached.promise = mongoose.connect(MONGODB_URI as string, options).then((mongooseInstance) => {
       console.log('MongoDB connected successfully');
       return mongooseInstance;
     });
